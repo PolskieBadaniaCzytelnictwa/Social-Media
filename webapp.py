@@ -3,8 +3,6 @@ import pandas as pd
 import os
 os.chdir(os.path.dirname(__file__))
 
-from streamlit_extras.switch_page_button import switch_page
-
 
 # dane dot. followersów
 df = pd.read_excel('./df_followers_transformed.xlsx', index_col=0)
