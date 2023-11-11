@@ -22,7 +22,7 @@ my_colors = {
 
 
 # dane dot. followersów
-df = pd.read_excel('./df_followers_transformed.xlsx', index_col=0)
+df = pd.read_excel('./df_followers.xlsx', index_col=0)
 df = df.replace(0, '-')
 
 # dane dot. periodyczności
