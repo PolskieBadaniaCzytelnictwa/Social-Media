@@ -70,20 +70,39 @@ filtered_df = filtered_df[selected_columns]
 
 output_type = st.selectbox('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'])
 
-if output_type=='Tabela':
-    # Przygotowanie i wyświetlenie tabeli
+if output_type == 'Tabela':
     filtered_df.index.name = None
     filtered_df = filtered_df.style.set_table_styles([
         {'selector': 'table', 'props': [('text-align', 'center')]},
         {'selector': 'th', 'props': [('text-align', 'center')]},
         {'selector': 'td', 'props': [('text-align', 'center')]},
-    {'selector': 'th.col0, td.col0', 'props': [('text-align', 'left')]}
+        {'selector': 'th.col0, td.col0', 'props': [('text-align', 'left')]}
     ])
-    filtered_df = filtered_df.to_html()
-    st.markdown(f"<div style='height: 32.5em; overflow-x: scroll;'>{filtered_df}</div>", unsafe_allow_html=True)
+
+    filtered_df_html = filtered_df.to_html()
+    filtered_df_html = filtered_df_html.replace('<table', "<table class='sticky-header'")
+    css_style = """
+        <style>
+            table.sticky-header thead tr {
+                position: sticky;
+                top: 0;
+                background-color: #f0f2f6;
+                border: 0.2em solid ##77AADB;
+            }
+        </style>
+    """
+    st.markdown(css_style, unsafe_allow_html=True)
+    st.markdown(f"<div style='height: 32.5em; overflow-x: scroll;'>{filtered_df_html}</div>", unsafe_allow_html=True)
 else:
     for column in selected_columns:
         aux = filtered_df[filtered_df[column]!='-'][column].sort_values(ascending=False).head(10)
+
+        if len(aux)==0:
+            st.write(f'Brak danych dla kategorii {column}')
+            continue
+        # przypadki gdzie jest mniej niż 10 pism w danej kategorii
+        while len(aux)<10:
+            aux = pd.concat([aux, pd.Series({' '*len(aux): 0})], axis=0)
         
         fig, ax = plt.subplots(figsize=(8, 6))
         plt.barh(aux.index, aux, color=my_colors[column], height=0.5)
@@ -96,9 +115,9 @@ else:
                    loc='left',
                    fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
         for index, value in enumerate(list(aux)):
-            plt.text(value, index+.1, format_number_with_spaces(value))
+            if value>0:
+                plt.text(value, index+.1, format_number_with_spaces(value))
             
         for index, pismo in enumerate(list(aux.index)):
             plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
         st.pyplot(fig)
-
