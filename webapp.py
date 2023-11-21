@@ -18,7 +18,8 @@ my_colors = {
     'LinkedIn': '#006683',
     'TikTok': '#00F0F0',
     'Pinterest': '#E0404B',
-    'Instagram': "#5B0F15"
+    'Instagram': "#5B0F15",
+    'Suma': '#0F1F27'
 }
 
 
@@ -51,26 +52,30 @@ st.markdown('<p style="font-size: 14px;">Wybierz media społecznościowe:</p>', 
 col1, col2 = st.columns(2)
 with col1:
     facebook = st.checkbox('Facebook', value=True)
-    x = st.checkbox('X', value=True)
-    linkedin = st.checkbox('LinkedIn', value=True)
     instagram = st.checkbox('Instagram', value=True)
+    linkedin = st.checkbox('LinkedIn', value=True)
+    pinterest = st.checkbox('Pinterest', value=True)
+    
 with col2:
     youtube = st.checkbox('YouTube', value=True)
+    x = st.checkbox('X', value=True)
     tiktok = st.checkbox('TikTok', value=True)
-    pinterest = st.checkbox('Pinterest', value=True)
     suma = st.checkbox('Suma', value=True)
 
 medialist = [
     (facebook, 'Facebook'),
     (youtube, 'YouTube'),
+    (instagram, 'Instagram'),
     (x, 'X'),
     (linkedin, 'LinkedIn'),
     (tiktok, 'TikTok'),
     (pinterest, 'Pinterest'),
-    (instagram, 'Instagram'),
     (suma, 'Suma')
 ]
 selected_columns = [x[1] for x in medialist if x[0]]
+# Przypadek, gdy nic nie jest zaznaczone
+if len(selected_columns)==0:
+    selected_columns = [x[1] for x in medialist]
 filtered_df = filtered_df[selected_columns]
 
 output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
@@ -86,7 +91,7 @@ if output_type == 'Tabela':
 
     filtered_df_html = filtered_df.to_html()
     filtered_df_html = filtered_df_html.replace('<table', "<table class='sticky-header'")
-    
+
     css_style = """
         <style>
             table.sticky-header thead tr {
@@ -97,14 +102,15 @@ if output_type == 'Tabela':
             }
 
             table.sticky-header {
-                font-size: 0.89em; /* Adjust the font size as needed */
+                font-size: 0.79em; /* Adjust the font size as needed */
                 max-width: 100%; /* Adjust the width as needed */
+                overflow-x: auto; /* Add horizontal scroll if needed */
             }
         </style>
     """
-    
+
     st.markdown(css_style, unsafe_allow_html=True)
-    st.markdown(f"<div style='overflow-x: scroll; max-width: 100%'>{filtered_df_html}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='sticky-table'>{filtered_df_html}</div>", unsafe_allow_html=True)
 
 else:
     for column in selected_columns:
@@ -124,9 +130,11 @@ else:
         plt.tick_params(axis='y', which='both', length=0, labelleft=False) # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
         plt.gca().invert_yaxis()
 
-        plt.title(f'Top 10 pism: obserwujący w serwisie {column}',
-                   loc='left',
-                   fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+        if column!='Suma':
+            title = f'Top 10 pism: obserwujący w serwisie {column}'
+        else:
+            title = f'Top 10 pism: Suma obserwujących w mediach społecznościowych'
+        plt.title(title, loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
         for index, value in enumerate(list(aux)):
             if value>0:
                 plt.text(value, index+.1, format_number_with_spaces(value))
