@@ -18,6 +18,7 @@ my_colors = {
     'LinkedIn': '#006683',
     'TikTok': '#00F0F0',
     'Pinterest': '#E0404B',
+    'Instagram': "#5B0F15"
 }
 
 
@@ -45,17 +46,19 @@ else:
      filtered_df = df
 
 
-media=list(df.columns.drop(['Suma', 'Typ']))
+media=list(df.columns.drop(['Typ']))
 st.markdown('<p style="font-size: 14px;">Wybierz media społecznościowe:</p>', unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 with col1:
     facebook = st.checkbox('Facebook', value=True)
     x = st.checkbox('X', value=True)
     linkedin = st.checkbox('LinkedIn', value=True)
+    instagram = st.checkbox('Instagram', value=True)
 with col2:
     youtube = st.checkbox('YouTube', value=True)
     tiktok = st.checkbox('TikTok', value=True)
     pinterest = st.checkbox('Pinterest', value=True)
+    suma = st.checkbox('Suma', value=True)
 
 medialist = [
     (facebook, 'Facebook'),
@@ -63,12 +66,14 @@ medialist = [
     (x, 'X'),
     (linkedin, 'LinkedIn'),
     (tiktok, 'TikTok'),
-    (pinterest, 'Pinterest')
+    (pinterest, 'Pinterest'),
+    (instagram, 'Instagram'),
+    (suma, 'Suma')
 ]
 selected_columns = [x[1] for x in medialist if x[0]]
 filtered_df = filtered_df[selected_columns]
 
-output_type = st.selectbox('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'])
+output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 
 if output_type == 'Tabela':
     filtered_df.index.name = None
@@ -81,6 +86,7 @@ if output_type == 'Tabela':
 
     filtered_df_html = filtered_df.to_html()
     filtered_df_html = filtered_df_html.replace('<table', "<table class='sticky-header'")
+    
     css_style = """
         <style>
             table.sticky-header thead tr {
@@ -89,10 +95,17 @@ if output_type == 'Tabela':
                 background-color: #f0f2f6;
                 border: 0.2em solid ##77AADB;
             }
+
+            table.sticky-header {
+                font-size: 0.89em; /* Adjust the font size as needed */
+                max-width: 100%; /* Adjust the width as needed */
+            }
         </style>
     """
+    
     st.markdown(css_style, unsafe_allow_html=True)
-    st.markdown(f"<div style='height: 32.5em; overflow-x: scroll;'>{filtered_df_html}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='overflow-x: scroll; max-width: 100%'>{filtered_df_html}</div>", unsafe_allow_html=True)
+
 else:
     for column in selected_columns:
         aux = filtered_df[filtered_df[column]!='-'][column].sort_values(ascending=False).head(10)
@@ -121,3 +134,6 @@ else:
         for index, pismo in enumerate(list(aux.index)):
             plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
         st.pyplot(fig)
+
+
+st.markdown("""<div style="font-size:12px">Źródło: Opracowanie własne PBC, dane na dzień 11.11.2023</div>""", unsafe_allow_html=True)
