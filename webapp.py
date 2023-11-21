@@ -76,7 +76,13 @@ selected_columns = [x[1] for x in medialist if x[0]]
 # Przypadek, gdy nic nie jest zaznaczone
 if len(selected_columns)==0:
     selected_columns = [x[1] for x in medialist]
-filtered_df = filtered_df[selected_columns]
+filtered_df = filtered_df[selected_columns].applymap(lambda x: format_number_with_spaces(x) if x != '-' else x)
+
+# Sortowanie według 1 medium, jeśli tylko 1 medium wybrane
+if len(selected_columns)==1:
+    filtered_df[selected_columns[0]] = filtered_df[selected_columns[0]].str.replace(' ', '').replace('-', 0).astype(int)
+    filtered_df.sort_values(by=selected_columns[0], ascending=False, inplace=True)
+    filtered_df[selected_columns[0]] = filtered_df[selected_columns[0]].replace(0, '-').astype(str)
 
 output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 
@@ -86,7 +92,7 @@ if output_type == 'Tabela':
         {'selector': 'table', 'props': [('text-align', 'center')]},
         {'selector': 'th', 'props': [('text-align', 'center')]},
         {'selector': 'td', 'props': [('text-align', 'center')]},
-        {'selector': 'th.col0, td.col0', 'props': [('text-align', 'left')]}
+        {'selector': 'th.col0, td.col0', 'props': [('text-align', 'center')]}  # Update the selector for the first column
     ])
 
     filtered_df_html = filtered_df.to_html()
@@ -106,6 +112,15 @@ if output_type == 'Tabela':
                 max-width: 100%; /* Adjust the width as needed */
                 overflow-x: auto; /* Add horizontal scroll if needed */
             }
+
+            /* Add a new style for the first column */
+            table.sticky-header td.col0 {
+                text-align: center;
+            }
+
+            td {
+            white-space: nowrap; /* This prevents text from breaking into multiple lines */
+            }
         </style>
     """
 
@@ -114,7 +129,10 @@ if output_type == 'Tabela':
 
 else:
     for column in selected_columns:
-        aux = filtered_df[filtered_df[column]!='-'][column].sort_values(ascending=False).head(10)
+        aux = filtered_df[filtered_df[column]!='-'][column]
+        
+        # Zamiana wartości na całkowite
+        aux = aux.str.replace(' ', '').replace('-', 0).astype(int).sort_values(ascending=False).head(10)
 
         if len(aux)==0:
             st.write(f'Brak danych dla kategorii {column}')
