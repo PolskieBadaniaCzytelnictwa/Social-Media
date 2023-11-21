@@ -135,9 +135,11 @@ else:
         else:
             title = f'Top 10 pism: Suma obserwujących w mediach społecznościowych'
         plt.title(title, loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+
+        margin = max(aux)*0.02
         for index, value in enumerate(list(aux)):
             if value>0:
-                plt.text(value, index+.1, format_number_with_spaces(value))
+                plt.text(value+margin, index+.1, format_number_with_spaces(value))
             
         for index, pismo in enumerate(list(aux.index)):
             plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
