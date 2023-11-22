@@ -33,9 +33,9 @@ df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
 
-st.set_page_config(page_title="Obserwujący w mediach społecznościowych",
+st.set_page_config(page_title="Prasa w mediach społecznościowych",
                     page_icon=":book:")
-st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Obserwujący w mediach społecznościowych</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 # st.title('Obserwujący w mediach społecznościowych')
 
 
@@ -83,6 +83,7 @@ if len(selected_columns)==1:
     filtered_df[selected_columns[0]] = filtered_df[selected_columns[0]].str.replace(' ', '').replace('-', 0).astype(int)
     filtered_df.sort_values(by=selected_columns[0], ascending=False, inplace=True)
     filtered_df[selected_columns[0]] = filtered_df[selected_columns[0]].replace(0, '-').astype(str)
+    filtered_df = filtered_df.applymap(lambda x: format_number_with_spaces(x) if x != '-' else x)
 
 output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 
@@ -148,11 +149,7 @@ else:
         plt.tick_params(axis='y', which='both', length=0, labelleft=False) # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
         plt.gca().invert_yaxis()
 
-        if column!='Suma':
-            title = f'Top 10 pism: obserwujący w serwisie {column}'
-        else:
-            title = f'Top 10 pism: Suma obserwujących w mediach społecznościowych'
-        plt.title(title, loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+        plt.title(f'Top 10: {column}', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
 
         margin = max(aux)*0.02
         for index, value in enumerate(list(aux)):
