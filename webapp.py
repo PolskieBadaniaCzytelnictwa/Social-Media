@@ -7,12 +7,12 @@ import os
 from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
 
+
 def format_number_with_spaces(number_str):
     # formatowanie liczb do formatu 1 111 111
     reversed_str = str(int(number_str))[::-1]
     groups = [reversed_str[i:i + 3] for i in range(0, len(reversed_str), 3)]
     return ' '.join(groups)[::-1]
-
 
 my_colors = {
     'Facebook': '#0070C0',
@@ -30,12 +30,24 @@ my_colors = {
 df = pd.read_excel('./df_followers.xlsx', index_col=0)
 df = df.replace(0, '-')
 
+
 # dane dot. periodyczności
 mapa = pd.read_excel('./mapa_typy_pism.xlsx')
 df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
 donutdf =deepcopy(df.drop(['Typ'], axis=1)).replace('-', 0).astype(int) # ramka danych do donut charta
+
+
+# dane dot. hyperlinków
+hyper_df = pd.read_excel('mapa_adresy_pbc.xlsx')
+hyperlink_dict = {title: address for title, address in zip(hyper_df['Tytuł'], hyper_df['AdresPBC'])}
+
+def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
+    if value in hyperlink_dict:
+        return f'<a href="{hyperlink_dict[value]}" style="text-decoration:none; color:black;">{value}</a>'
+    return value
+
 
 st.set_page_config(page_title="Prasa w mediach społecznościowych",
                     page_icon=":book:")
@@ -81,6 +93,8 @@ def create_donut(donutdf):
 
 st.pyplot(create_donut(donutdf))
 ######## Koniec wykresu ########
+
+
 st.markdown('---')
 st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Liczba obserwatorów w social mediach</h2>", unsafe_allow_html=True)
 
@@ -90,7 +104,6 @@ if selected_typ:
     filtered_df = df[df['Typ'].isin(selected_typ)]
 else:
      filtered_df = df
-
 
 media=list(df.columns.drop(['Typ']))
 st.markdown('<p style="font-size: 14px;">Wybierz media społecznościowe:</p>', unsafe_allow_html=True)
@@ -130,13 +143,15 @@ if len(selected_columns)==1:
     filtered_df[selected_columns[0]] = filtered_df[selected_columns[0]].replace(0, '-').astype(str)
     filtered_df = filtered_df.applymap(lambda x: format_number_with_spaces(x) if x != '-' else x)
 
-output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 
+output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 if output_type == 'Tabela':
     searchbar = st.text_input("Wyszukaj markę prasową:",  "", key="placeholder")
     filtered_df = filtered_df[filtered_df.index.str.contains(searchbar, case=False, na=False)]
 
     filtered_df.index.name = None
+    filtered_df = filtered_df.rename(index=lambda x: add_hyperlink(x))
+
     filtered_df = filtered_df.style.set_table_styles([
         {'selector': 'table', 'props': [('text-align', 'center')]},
         {'selector': 'th', 'props': [('text-align', 'center')]},
