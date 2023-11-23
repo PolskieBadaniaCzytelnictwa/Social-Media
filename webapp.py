@@ -247,4 +247,4 @@ else:
         st.pyplot(fig)
 
 
-st.markdown("""<div style="font-size:12px">Źródło: Opracowanie własne PBC, dane na dzień 11.11.2023</div>""", unsafe_allow_html=True)
+st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 11.11.2023</div>""", unsafe_allow_html=True)
