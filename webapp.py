@@ -44,7 +44,7 @@ st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach 
 
 ######## Wykres kołowy ########
 st.markdown('---')
-st.markdown("<h2 style='text-align: center;'>Udział poszczególnych platform</h1>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Udział poszczególnych platform</h2>", unsafe_allow_html=True)
 
 @st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def create_donut(donutdf):
@@ -58,7 +58,7 @@ def create_donut(donutdf):
     label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in media]
 
     plt.pie(followers, colors=[my_colors[medium] for medium in media], labels=label, labeldistance=1.1, 
-        textprops={'fontsize': 12, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
+        textprops={'fontsize': 8.8, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
 
     centre_circle = plt.Circle((0, 0), 0.70, fc='white')
     fig = plt.gcf()
@@ -182,7 +182,7 @@ else:
             bars = plt.barh(top10.index, top10[column], left=bottom, label=column, color=my_colors[column], height=0.5)
             bottom += top10[column]
 
-        plt.title('Top 10: Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+        plt.title('Top 10 Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
         plt.gca().invert_yaxis()
         plt.legend(loc=(0.8, 0.15))
 
@@ -225,7 +225,7 @@ else:
         plt.tick_params(axis='y', which='both', length=0, labelleft=False) # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
         plt.gca().invert_yaxis()
 
-        plt.title(f'Top 10: {column}', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+        plt.title(f'Top 10 {column}', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
 
         margin = max(aux)*0.02
         for index, value in enumerate(list(aux)):
