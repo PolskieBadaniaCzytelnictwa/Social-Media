@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
+import numpy as np
 import os
 from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
@@ -39,7 +40,7 @@ donutdf =deepcopy(df.drop(['Typ'], axis=1)).replace('-', 0).astype(int) # ramka 
 st.set_page_config(page_title="Prasa w mediach społecznościowych",
                     page_icon=":book:")
 st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
-# st.title('Obserwujący w mediach społecznościowych')
+
 
 ######## Wykres kołowy ########
 st.markdown('---')
@@ -48,15 +49,15 @@ st.markdown("<h2 style='text-align: center;'>Udział poszczególnych platform</h
 @st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def create_donut(donutdf):
     sumdict = {}
-    # Media = ['TikTok', 'YouTube', 'LinkedIn', 'Instagram', 'X', 'Pinterest', 'Facebook']
-    Media = ['X', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Facebook', 'Pinterest']
-    for column in Media+['Suma']:
+    # media = ['TikTok', 'YouTube', 'LinkedIn', 'Instagram', 'X', 'Pinterest', 'Facebook']
+    media = ['X', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Facebook', 'Pinterest']
+    for column in media+['Suma']:
         sumdict[column] = donutdf[column].sum()
     
-    Followers = [sumdict[medium] for medium in Media]
-    Label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in Media]
+    followers = [sumdict[medium] for medium in media]
+    label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in media]
 
-    plt.pie(Followers, colors=[my_colors[medium] for medium in Media], labels=Label, labeldistance=1.1, 
+    plt.pie(followers, colors=[my_colors[medium] for medium in media], labels=label, labeldistance=1.1, 
         textprops={'fontsize': 12, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
 
     centre_circle = plt.Circle((0, 0), 0.70, fc='white')
@@ -65,10 +66,10 @@ def create_donut(donutdf):
 
     plt.text(0, .1, str(round(sumdict['Suma']/pow(10, 6), 1)).replace('.', ',') +' mln',
             horizontalalignment='center', verticalalignment='center', color='#31333f',
-            fontdict={'fontsize': 30, 'fontname': 'Lato', 'fontweight': 'bold'})
+            fontdict={'fontsize': 27, 'fontname': 'Lato', 'fontweight': 'bold'})
     plt.text(0, -.1, 'obserwatorów',
             horizontalalignment='center', verticalalignment='center', color='#31333f',
-            fontdict={'fontsize': 20, 'fontname': 'Lato', 'fontweight': 'bold'})
+            fontdict={'fontsize': 17, 'fontname': 'Lato', 'fontweight': 'bold'})
     plt.axis('equal')
     return(fig)
 
@@ -166,7 +167,45 @@ if output_type == 'Tabela':
     st.markdown(f"<div class='sticky-table'>{filtered_df_html}</div>", unsafe_allow_html=True)
 
 else:
+    if 'Suma' in selected_columns:
+        if len(selected_columns)==1:
+            st.write('Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą.')
+            st.stop()
+        top10 = filtered_df[selected_columns[:-1]]
+        top10 = top10.applymap(lambda x: int(x.replace(' ', '').replace('-', '0')))
+        top10['Suma_Selected'] = top10.sum(axis=1)
+        top10= top10.sort_values('Suma_Selected', ascending=False).head(10)
+
+        bottom = np.zeros(len(top10))
+        fig, ax = plt.subplots(figsize=(8, 6))
+        for column in top10.columns[:-1]:
+            bars = plt.barh(top10.index, top10[column], left=bottom, label=column, color=my_colors[column], height=0.5)
+            bottom += top10[column]
+
+        plt.title('Top 10: Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+        plt.gca().invert_yaxis()
+        plt.legend(loc=(0.8, 0.15))
+
+        plt.gca().spines[:].set_visible(False)
+        plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        plt.tick_params(axis='y', which='both', length=0, labelleft=False)
+
+        margin = max(top10['Suma_Selected'])*0.02
+        for bar, value in zip(bars, top10['Suma_Selected']):
+            plt.text(bar.get_x()+bar.get_width()+margin,
+                    bar.get_y() + bar.get_height() / 2,
+                    format_number_with_spaces(value),
+                    ha='left',
+                    va='center'
+                    )
+            
+        for index, pismo in enumerate(list(top10.index)):
+                    plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
+        st.pyplot(fig)
+    
     for column in selected_columns:
+        if column=='Suma':
+            continue
         aux = filtered_df[filtered_df[column]!='-'][column]
         
         # Zamiana wartości na całkowite
