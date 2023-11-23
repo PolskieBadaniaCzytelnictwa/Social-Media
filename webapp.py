@@ -49,16 +49,22 @@ st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Udział poszczeg
 @st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def create_donut(donutdf):
     sumdict = {}
-    # media = ['TikTok', 'YouTube', 'LinkedIn', 'Instagram', 'X', 'Pinterest', 'Facebook']
-    media = ['X', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Facebook', 'Pinterest']
+    media = ['Facebook', 'X', 'YouTube', 'Instagram', 'LinkedIn', 'TikTok', 'Pinterest']
     for column in media+['Suma']:
         sumdict[column] = donutdf[column].sum()
     
     followers = [sumdict[medium] for medium in media]
-    label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in media]
+    # rozwiązanie dla nachodzących na siebie podpisów (przy zmiane danych będzie wymagało korekty)
+    label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in media[:4]] + ['']*3
+    for i, medium in enumerate(media[4:]):
+        plt.text(0.5*i-0.55, 1.05+(i%2)/11, medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%',
+                horizontalalignment='center', verticalalignment='center', color='#31333f',
+                fontdict={'fontsize': 8.8, 'fontname': 'Lato'})
 
-    plt.pie(followers, colors=[my_colors[medium] for medium in media], labels=label, labeldistance=1.1, 
-        textprops={'fontsize': 8.8, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
+    plt.pie(followers, colors=[my_colors[medium] for medium in media],
+             labels=label, labeldistance=1.07,
+             startangle=90, counterclock=False,
+             textprops={'fontsize': 8.8, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
 
     centre_circle = plt.Circle((0, 0), 0.70, fc='white')
     fig = plt.gcf()
@@ -74,8 +80,9 @@ def create_donut(donutdf):
     return(fig)
 
 st.pyplot(create_donut(donutdf))
-st.markdown('---')
 ######## Koniec wykresu ########
+st.markdown('---')
+st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Liczba obserwatorów w social mediach</h2>", unsafe_allow_html=True)
 
 typ = list(df['Typ'].unique())
 selected_typ = st.multiselect('Wybierz grupę pism:', options=typ, default=typ)
@@ -126,6 +133,9 @@ if len(selected_columns)==1:
 output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 
 if output_type == 'Tabela':
+    searchbar = st.text_input("Wyszukaj markę prasową:",  "", key="placeholder")
+    filtered_df = filtered_df[filtered_df.index.str.contains(searchbar, case=False, na=False)]
+
     filtered_df.index.name = None
     filtered_df = filtered_df.style.set_table_styles([
         {'selector': 'table', 'props': [('text-align', 'center')]},
