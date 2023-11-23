@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
 import os
+from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
 
 def format_number_with_spaces(number_str):
@@ -32,12 +34,47 @@ mapa = pd.read_excel('./mapa_typy_pism.xlsx')
 df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
+donutdf =deepcopy(df.drop(['Typ'], axis=1)).replace('-', 0).astype(int) # ramka danych do donut charta
 
 st.set_page_config(page_title="Prasa w mediach społecznościowych",
                     page_icon=":book:")
 st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 # st.title('Obserwujący w mediach społecznościowych')
 
+######## Wykres kołowy ########
+st.markdown('---')
+st.markdown("<h2 style='text-align: center;'>Udział poszczególnych platform</h1>", unsafe_allow_html=True)
+
+@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+def create_donut(donutdf):
+    sumdict = {}
+    # Media = ['TikTok', 'YouTube', 'LinkedIn', 'Instagram', 'X', 'Pinterest', 'Facebook']
+    Media = ['X', 'Instagram', 'LinkedIn', 'YouTube', 'TikTok', 'Facebook', 'Pinterest']
+    for column in Media+['Suma']:
+        sumdict[column] = donutdf[column].sum()
+    
+    Followers = [sumdict[medium] for medium in Media]
+    Label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in Media]
+
+    plt.pie(Followers, colors=[my_colors[medium] for medium in Media], labels=Label, labeldistance=1.1, 
+        textprops={'fontsize': 12, 'fontname': 'Lato', 'color': '#31333f'})#, explode=tuple([0.1] *len(Media)))
+
+    centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+    fig = plt.gcf()
+    fig.gca().add_artist(centre_circle)
+
+    plt.text(0, .1, str(round(sumdict['Suma']/pow(10, 6), 1)).replace('.', ',') +' mln',
+            horizontalalignment='center', verticalalignment='center', color='#31333f',
+            fontdict={'fontsize': 30, 'fontname': 'Lato', 'fontweight': 'bold'})
+    plt.text(0, -.1, 'obserwatorów',
+            horizontalalignment='center', verticalalignment='center', color='#31333f',
+            fontdict={'fontsize': 20, 'fontname': 'Lato', 'fontweight': 'bold'})
+    plt.axis('equal')
+    return(fig)
+
+st.pyplot(create_donut(donutdf))
+st.markdown('---')
+######## Koniec wykresu ########
 
 typ = list(df['Typ'].unique())
 selected_typ = st.multiselect('Wybierz grupę pism:', options=typ, default=typ)
