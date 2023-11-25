@@ -82,7 +82,7 @@ def create_donut(donutdf):
 
     plt.text(0, .1, 'Suma obserwatorów',
             horizontalalignment='center', verticalalignment='center', color='#31333f',
-            fontdict={'fontsize': 16, 'fontname': 'Lato', 'fontweight': 'bold'})
+            fontdict={'fontsize': 13, 'fontname': 'Lato', 'fontweight': 'bold'})
     plt.text(0, -.1, str(round(sumdict['Suma']/pow(10, 6), 1)).replace('.', ',') +' mln',
             horizontalalignment='center', verticalalignment='center', color='#31333f',
             fontdict={'fontsize': 27, 'fontname': 'Lato', 'fontweight': 'bold'})
