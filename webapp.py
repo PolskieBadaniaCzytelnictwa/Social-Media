@@ -28,15 +28,13 @@ my_colors = {
 
 # dane dot. followersów
 df = pd.read_excel('./df_followers.xlsx', index_col=0)
-df = df.replace(0, '-')
-
 
 # dane dot. periodyczności
 mapa = pd.read_excel('./mapa_typy_pism.xlsx')
 df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
-donutdf =deepcopy(df.drop(['Typ'], axis=1)).replace('-', 0).astype(int) # ramka danych do donut charta
+donutdf =deepcopy(df.drop(['Typ'], axis=1)) # ramka danych do donut charta
 
 
 # dane dot. hyperlinków
@@ -67,9 +65,9 @@ def create_donut(donutdf):
     
     followers = [sumdict[medium] for medium in media]
     # rozwiązanie dla nachodzących na siebie podpisów (przy zmiane danych będzie wymagało korekty)
-    label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%' for medium in media[:4]] + ['']*3
+    label = [medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1)).replace('.',',')+'%' for medium in media[:4]] + ['']*3
     for i, medium in enumerate(media[4:]):
-        plt.text(0.5*i-0.55, 1.05+(i%2)/11, medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1))+'%',
+        plt.text(0.5*i-0.55, 1.05+(i%2)/11, medium + ': ' + str(round(100*sumdict[medium]/sumdict['Suma'], 1)).replace('.',',')+'%',
                 horizontalalignment='center', verticalalignment='center', color='#31333f',
                 fontdict={'fontsize': 8.8, 'fontname': 'Lato'})
 
@@ -82,12 +80,12 @@ def create_donut(donutdf):
     fig = plt.gcf()
     fig.gca().add_artist(centre_circle)
 
-    plt.text(0, .1, str(round(sumdict['Suma']/pow(10, 6), 1)).replace('.', ',') +' mln',
+    plt.text(0, .1, 'Suma obserwatorów',
+            horizontalalignment='center', verticalalignment='center', color='#31333f',
+            fontdict={'fontsize': 16, 'fontname': 'Lato', 'fontweight': 'bold'})
+    plt.text(0, -.1, str(round(sumdict['Suma']/pow(10, 6), 1)).replace('.', ',') +' mln',
             horizontalalignment='center', verticalalignment='center', color='#31333f',
             fontdict={'fontsize': 27, 'fontname': 'Lato', 'fontweight': 'bold'})
-    plt.text(0, -.1, 'obserwatorów',
-            horizontalalignment='center', verticalalignment='center', color='#31333f',
-            fontdict={'fontsize': 17, 'fontname': 'Lato', 'fontweight': 'bold'})
     plt.axis('equal')
     return(fig)
 
@@ -134,7 +132,17 @@ selected_columns = [x[1] for x in medialist if x[0]]
 # Przypadek, gdy nic nie jest zaznaczone
 if len(selected_columns)==0:
     selected_columns = [x[1] for x in medialist]
+
+# Aktualizacja sumy w zależności do wybranych pism
+if 'Suma' in selected_columns:
+    if len(selected_columns)>1:
+        filtered_df['Suma'] = filtered_df[selected_columns[:-1]].sum(axis=1)
+    else:
+        filtered_df['Suma'] = df['Suma'] # suma dla wszystkich pism
+
+filtered_df = filtered_df.replace(0, '-')
 filtered_df = filtered_df[selected_columns].applymap(lambda x: format_number_with_spaces(x) if x != '-' else x)
+
 
 # Sortowanie według 1 medium, jeśli tylko 1 medium wybrane
 if len(selected_columns)==1:
