@@ -47,8 +47,7 @@ def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
     return value
 
 
-st.set_page_config(page_title="Prasa w mediach społecznościowych",
-                    page_icon=":book:")
+st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
 st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 
 
@@ -137,6 +136,7 @@ if len(selected_columns)==0:
 if 'Suma' in selected_columns:
     if len(selected_columns)>1:
         filtered_df['Suma'] = filtered_df[selected_columns[:-1]].sum(axis=1)
+        filtered_df = filtered_df.sort_values('Suma', ascending=False)
     else:
         filtered_df['Suma'] = df['Suma'] # suma dla wszystkich pism
 
