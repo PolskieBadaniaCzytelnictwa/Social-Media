@@ -12,7 +12,7 @@ st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon="
 st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_data(filename, indexcol=False):
     if not indexcol:
         df = pd.read_excel(filename)
@@ -46,7 +46,6 @@ df = load_data('./df_followers.xlsx', indexcol=True)
 
 # dane dot. periodyczności
 mapa = load_data('./mapa_typy_pism.xlsx')
-mapa = pd.read_excel('./mapa_typy_pism.xlsx')
 df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
