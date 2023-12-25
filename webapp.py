@@ -8,11 +8,25 @@ from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
 
 
+st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
+st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
+
+
+@st.cache_data
+def load_data(filename, indexcol=False):
+    if not indexcol:
+        df = pd.read_excel(filename)
+    else:
+        df = pd.read_excel(filename, index_col=0)
+    return df
+
+
 def format_number_with_spaces(number_str):
     # formatowanie liczb do formatu 1 111 111
     reversed_str = str(int(number_str))[::-1]
     groups = [reversed_str[i:i + 3] for i in range(0, len(reversed_str), 3)]
     return ' '.join(groups)[::-1]
+    
 
 my_colors = {
     'Facebook': '#0070C0',
@@ -25,30 +39,27 @@ my_colors = {
     'Suma': '#0F1F27'
 }
 
+######## Ładowanie danych ########
 
 # dane dot. followersów
-df = pd.read_excel('./df_followers.xlsx', index_col=0)
+df = load_data('./df_followers.xlsx', indexcol=True)
 
 # dane dot. periodyczności
+mapa = load_data('./mapa_typy_pism.xlsx')
 mapa = pd.read_excel('./mapa_typy_pism.xlsx')
 df = df.merge(mapa, on='Tytuł', how='left')
 df = df[df['Typ']!='NIEUWZGLĘDNIONE']
 df.set_index(df.columns[0], inplace=True)
 donutdf =deepcopy(df.drop(['Typ'], axis=1)) # ramka danych do donut charta
 
-
 # dane dot. hyperlinków
-hyper_df = pd.read_excel('mapa_adresy_pbc.xlsx')
+hyper_df = load_data('./mapa_adresy_pbc.xlsx')
 hyperlink_dict = {title: address for title, address in zip(hyper_df['Tytuł'], hyper_df['AdresPBC'])}
 
 def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
     if value in hyperlink_dict:
         return f'<a href="{hyperlink_dict[value]}" style="text-decoration:none; color:black;">{value}</a>'
     return value
-
-
-st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
-st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 
 
 ######## Wykres kołowy ########
