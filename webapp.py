@@ -88,7 +88,7 @@ def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
 
 ######## Wykresy ########
 
-@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def barplot(df, column):
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.barh(df.index, df, color=my_colors[column], height=0.5)
@@ -109,7 +109,7 @@ def barplot(df, column):
     return fig
 
 
-@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def barplot_suma(filtered_df):
     if len(selected_columns)==1:
         st.write('Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą.')
@@ -147,7 +147,7 @@ def barplot_suma(filtered_df):
     return fig
 
 
-@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def create_donut(donutdf):
     sumdict = {}
     media = ['Facebook', 'X', 'YouTube', 'Instagram', 'LinkedIn', 'TikTok', 'Pinterest']
@@ -273,7 +273,7 @@ if output_type == 'Tabela':
 
 else:
     if 'Suma' in selected_columns:
-        st.pyplot(barplot_suma(filtered_df=filtered_df))
+        st.pyplot(barplot_suma(filtered_df))
     
     for column in selected_columns:
         if column=='Suma':
