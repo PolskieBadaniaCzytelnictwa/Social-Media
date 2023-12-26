@@ -49,7 +49,7 @@ table_css_style = """
 """
 
 
-@st.cache_data(ttl=3600, max_entries=20)
+@st.cache_data(ttl=3600)
 def load_data(filename, indexcol=False):
     if not indexcol:
         df = pd.read_excel(filename)
@@ -88,7 +88,7 @@ def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
 
 ######## Wykresy ########
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600, max_entries=20)
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
 def barplot(df, column):
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.barh(df.index, df, color=my_colors[column], height=0.5)
@@ -109,7 +109,7 @@ def barplot(df, column):
     return fig
 
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600, max_entries=20)
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
 def barplot_suma(filtered_df):
     if len(selected_columns)==1:
         st.write('Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą.')
@@ -147,7 +147,7 @@ def barplot_suma(filtered_df):
     return fig
 
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600, max_entries=20)
+@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
 def create_donut(donutdf):
     sumdict = {}
     media = ['Facebook', 'X', 'YouTube', 'Instagram', 'LinkedIn', 'TikTok', 'Pinterest']
