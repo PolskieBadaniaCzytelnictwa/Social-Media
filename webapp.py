@@ -11,6 +11,43 @@ os.chdir(os.path.dirname(__file__))
 st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
 st.markdown("<h1 style='margin-top: -80px; text-align: center;'>Prasa w mediach społecznościowych</h1>", unsafe_allow_html=True)
 
+my_colors = {
+    'Facebook': '#0070C0',
+    'YouTube': '#981923',
+    'X': '#193441',
+    'LinkedIn': '#006683',
+    'TikTok': '#00F0F0',
+    'Pinterest': '#E0404B',
+    'Instagram': "#5B0F15",
+    'Suma': '#0F1F27'
+}
+
+table_css_style = """
+    <style>
+        table.sticky-header thead tr {
+            position: sticky;
+            top: 0;
+            background-color: #f0f2f6;
+            border: 0.2em solid ##77AADB;
+        }
+
+        table.sticky-header {
+            font-size: 0.79em; /* Adjust the font size as needed */
+            max-width: 100%; /* Adjust the width as needed */
+            overflow-x: auto; /* Add horizontal scroll if needed */
+        }
+
+        /* Add a new style for the first column */
+        table.sticky-header td.col0 {
+            text-align: center;
+        }
+
+        td {
+        white-space: nowrap; /* This prevents text from breaking into multiple lines */
+        }
+    </style>
+"""
+
 
 @st.cache_data(ttl=3600)
 def load_data(filename, indexcol=False):
@@ -28,19 +65,7 @@ def format_number_with_spaces(number_str):
     return ' '.join(groups)[::-1]
     
 
-my_colors = {
-    'Facebook': '#0070C0',
-    'YouTube': '#981923',
-    'X': '#193441',
-    'LinkedIn': '#006683',
-    'TikTok': '#00F0F0',
-    'Pinterest': '#E0404B',
-    'Instagram': "#5B0F15",
-    'Suma': '#0F1F27'
-}
-
 ######## Ładowanie danych ########
-
 # dane dot. followersów
 df = load_data('./df_followers.xlsx', indexcol=True)
 
@@ -61,9 +86,66 @@ def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
     return value
 
 
-######## Wykres kołowy ########
-st.markdown('---')
-st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Udział poszczególnych platform</h2>", unsafe_allow_html=True)
+######## Wykresy ########
+
+@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+def barplot(df, column):
+    fig, ax = plt.subplots(figsize=(8, 6))
+    plt.barh(df.index, df, color=my_colors[column], height=0.5)
+    plt.gca().spines[:].set_visible(False)
+    plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    plt.tick_params(axis='y', which='both', length=0, labelleft=False) # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
+    plt.gca().invert_yaxis()
+
+    plt.title(f'Top 10 {column}', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+
+    margin = max(df)*0.02
+    for index, value in enumerate(list(df)):
+        if value>0:
+            plt.text(value+margin, index+.1, format_number_with_spaces(value))
+        
+    for index, pismo in enumerate(list(df.index)):
+        plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
+    return fig
+
+
+@st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
+def barplot_suma(filtered_df):
+    if len(selected_columns)==1:
+        st.write('Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą.')
+        st.stop()
+    top10 = filtered_df[selected_columns[:-1]]
+    top10 = top10.applymap(lambda x: int(x.replace(' ', '').replace('-', '0')))
+    top10['Suma_Selected'] = top10.sum(axis=1)
+    top10= top10.sort_values('Suma_Selected', ascending=False).head(10)
+
+    bottom = np.zeros(len(top10))
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for column in top10.columns[:-1]:
+        bars = plt.barh(top10.index, top10[column], left=bottom, label=column, color=my_colors[column], height=0.5)
+        bottom += top10[column]
+
+    plt.title('Top 10 Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
+    plt.gca().invert_yaxis()
+    plt.legend(loc=(0.8, 0.15))
+
+    plt.gca().spines[:].set_visible(False)
+    plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+    plt.tick_params(axis='y', which='both', length=0, labelleft=False)
+
+    margin = max(top10['Suma_Selected'])*0.02
+    for bar, value in zip(bars, top10['Suma_Selected']):
+        plt.text(bar.get_x()+bar.get_width()+margin,
+                bar.get_y() + bar.get_height() / 2,
+                format_number_with_spaces(value),
+                ha='left',
+                va='center'
+                )
+        
+    for index, pismo in enumerate(list(top10.index)):
+                plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
+    return fig
+
 
 @st.cache_resource(hash_funcs={matplotlib.figure.Figure: lambda _: None})
 def create_donut(donutdf):
@@ -97,9 +179,14 @@ def create_donut(donutdf):
             fontdict={'fontsize': 27, 'fontname': 'Lato', 'fontweight': 'bold'})
     plt.axis('equal')
     return(fig)
+######## Koniec wykresów ########
 
+
+######## Wykres kołowy ########
+st.markdown('---')
+st.markdown("<h2 style='text-align: center; font-size: 1.27em;'>Udział poszczególnych platform</h2>", unsafe_allow_html=True)
 st.pyplot(create_donut(donutdf))
-######## Koniec wykresu ########
+###############################
 
 
 st.markdown('---')
@@ -162,6 +249,7 @@ if len(selected_columns)==1:
     filtered_df = filtered_df.applymap(lambda x: format_number_with_spaces(x) if x != '-' else x)
 
 
+######## Wyświetlanie danych ########
 output_type = st.radio('Wybierz tryb wyświetlania danych:', ['Tabela', 'Wykresy'], horizontal=True)
 if output_type == 'Tabela':
     searchbar = st.text_input("Wyszukaj markę prasową:",  "", key="placeholder")
@@ -180,77 +268,18 @@ if output_type == 'Tabela':
     filtered_df_html = filtered_df.to_html()
     filtered_df_html = filtered_df_html.replace('<table', "<table class='sticky-header'")
 
-    css_style = """
-        <style>
-            table.sticky-header thead tr {
-                position: sticky;
-                top: 0;
-                background-color: #f0f2f6;
-                border: 0.2em solid ##77AADB;
-            }
-
-            table.sticky-header {
-                font-size: 0.79em; /* Adjust the font size as needed */
-                max-width: 100%; /* Adjust the width as needed */
-                overflow-x: auto; /* Add horizontal scroll if needed */
-            }
-
-            /* Add a new style for the first column */
-            table.sticky-header td.col0 {
-                text-align: center;
-            }
-
-            td {
-            white-space: nowrap; /* This prevents text from breaking into multiple lines */
-            }
-        </style>
-    """
-
-    st.markdown(css_style, unsafe_allow_html=True)
+    st.markdown(table_css_style, unsafe_allow_html=True)
     st.markdown(f"<div class='sticky-table'>{filtered_df_html}</div>", unsafe_allow_html=True)
 
 else:
     if 'Suma' in selected_columns:
-        if len(selected_columns)==1:
-            st.write('Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą.')
-            st.stop()
-        top10 = filtered_df[selected_columns[:-1]]
-        top10 = top10.applymap(lambda x: int(x.replace(' ', '').replace('-', '0')))
-        top10['Suma_Selected'] = top10.sum(axis=1)
-        top10= top10.sort_values('Suma_Selected', ascending=False).head(10)
-
-        bottom = np.zeros(len(top10))
-        fig, ax = plt.subplots(figsize=(8, 6))
-        for column in top10.columns[:-1]:
-            bars = plt.barh(top10.index, top10[column], left=bottom, label=column, color=my_colors[column], height=0.5)
-            bottom += top10[column]
-
-        plt.title('Top 10 Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
-        plt.gca().invert_yaxis()
-        plt.legend(loc=(0.8, 0.15))
-
-        plt.gca().spines[:].set_visible(False)
-        plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        plt.tick_params(axis='y', which='both', length=0, labelleft=False)
-
-        margin = max(top10['Suma_Selected'])*0.02
-        for bar, value in zip(bars, top10['Suma_Selected']):
-            plt.text(bar.get_x()+bar.get_width()+margin,
-                    bar.get_y() + bar.get_height() / 2,
-                    format_number_with_spaces(value),
-                    ha='left',
-                    va='center'
-                    )
-            
-        for index, pismo in enumerate(list(top10.index)):
-                    plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
-        st.pyplot(fig)
+        st.pyplot(barplot_suma(filtered_df=filtered_df))
     
     for column in selected_columns:
         if column=='Suma':
             continue
+
         aux = filtered_df[filtered_df[column]!='-'][column]
-        
         # Zamiana wartości na całkowite
         aux = aux.str.replace(' ', '').replace('-', 0).astype(int).sort_values(ascending=False).head(10)
 
@@ -261,23 +290,7 @@ else:
         while len(aux)<10:
             aux = pd.concat([aux, pd.Series({' '*len(aux): 0})], axis=0)
         
-        fig, ax = plt.subplots(figsize=(8, 6))
-        plt.barh(aux.index, aux, color=my_colors[column], height=0.5)
-        plt.gca().spines[:].set_visible(False)
-        plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
-        plt.tick_params(axis='y', which='both', length=0, labelleft=False) # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
-        plt.gca().invert_yaxis()
-
-        plt.title(f'Top 10 {column}', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
-
-        margin = max(aux)*0.02
-        for index, value in enumerate(list(aux)):
-            if value>0:
-                plt.text(value+margin, index+.1, format_number_with_spaces(value))
-            
-        for index, pismo in enumerate(list(aux.index)):
-            plt.text(0, index-0.48, pismo, ha='left', va='center', fontdict={'fontsize': 10.8, 'fontname': 'Lato'})
-        st.pyplot(fig)
+        st.pyplot(barplot(df=aux, column=column))
 
 
 st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 11.11.2023</div>""", unsafe_allow_html=True)
