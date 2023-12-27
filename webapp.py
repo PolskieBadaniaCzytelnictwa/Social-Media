@@ -6,6 +6,7 @@ import numpy as np
 import os
 from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
+import gc
 
 
 st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
@@ -294,3 +295,4 @@ else:
 
 
 st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 11.11.2023</div>""", unsafe_allow_html=True)
+gc.collect() # cleaning the memory
