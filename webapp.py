@@ -273,6 +273,10 @@ if output_type == 'Tabela':
     st.markdown(f"<div class='sticky-table'>{filtered_df_html}</div>", unsafe_allow_html=True)
 
 else:
+    if selected_typ==['Dodatki']:
+        st.write('Proszę wybrać więcej grup pism, kategoria jest zbyt wąska, by wyświetlać wykresy.')
+        st.stop()
+
     if 'Suma' in selected_columns:
         st.pyplot(barplot_suma(filtered_df))
     
