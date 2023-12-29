@@ -301,5 +301,5 @@ else:
         st.pyplot(barplot(df=aux, column=column))
 
 
-st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 27.12.2023</div>""", unsafe_allow_html=True)
+st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.12.2023</div>""", unsafe_allow_html=True)
 gc.collect() # cleaning the memory
