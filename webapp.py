@@ -128,7 +128,10 @@ def barplot_suma(filtered_df):
 
     plt.title('Top 10 Suma', loc='left', fontdict={'fontsize': 14, 'fontweight': 'bold', 'fontname': 'Lato'})
     plt.gca().invert_yaxis()
-    plt.legend(loc=(0.8, 0.15))
+    if selected_typ!=['Dzienniki regionalne']:
+        plt.legend(loc=(0.8, 0.15))
+    else:
+        plt.legend(loc=(1.05, 0.15))
 
     plt.gca().spines[:].set_visible(False)
     plt.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
@@ -298,5 +301,5 @@ else:
         st.pyplot(barplot(df=aux, column=column))
 
 
-st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.12.2023</div>""", unsafe_allow_html=True)
+st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 27.12.2023</div>""", unsafe_allow_html=True)
 gc.collect() # cleaning the memory
