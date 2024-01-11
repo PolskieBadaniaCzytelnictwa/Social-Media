@@ -7,6 +7,8 @@ import os
 from copy import deepcopy
 os.chdir(os.path.dirname(__file__))
 import gc
+import openpyxl
+from datetime import datetime
 
 
 st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
@@ -300,6 +302,32 @@ else:
         
         st.pyplot(barplot(df=aux, column=column))
 
+footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.12.2023"
+st.markdown(f"""<div style="font-size:12px">{footer_message}</div>""", unsafe_allow_html=True)
+st.write('\n')
 
-st.markdown("""<div style="font-size:12px">Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.12.2023</div>""", unsafe_allow_html=True)
-gc.collect() # cleaning the memory
+# Pobieranie danych
+spreadsheet = openpyxl.load_workbook('template.xlsx')
+sheet = spreadsheet.active
+sheet['A3'] = f'Data wykonania raportu: {datetime.now().strftime("%d.%m.%Y")}'
+
+output_df = pd.read_html(filtered_df_html)[0]
+
+for col_index, column in enumerate(list(output_df.columns)[1:], start=2):
+    sheet.cell(row=5, column=col_index, value=column)
+
+for row_index, row_data in enumerate(output_df.values, start=6):
+    for col_index, value in enumerate(row_data, start=1):
+        sheet.cell(row=row_index, column=col_index, value=value)
+sheet.cell(row=row_index+1, column=1, value=footer_message)
+
+output_file = 'Raport_Social_Media.xlsx'
+spreadsheet.save(output_file)
+
+st.download_button(label="Pobierz dane",
+                    data=open(output_file, 'rb').read(),
+                      file_name=output_file,
+                        mime="application/vnd.ms-excel"
+                        )
+
+gc.collect()
