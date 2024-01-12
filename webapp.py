@@ -309,35 +309,36 @@ st.write('\n')
 
 
 # Pobieranie przefiltrowanych danych 
-spreadsheet = openpyxl.load_workbook('template.xlsx')
-sheet = spreadsheet.active
-sheet['A3'] = f'Data wykonania raportu: {datetime.now().strftime("%d.%m.%Y")}'
-sheet['A5'] = 'Pismo'
-sheet['A5'].fill = PatternFill(start_color='00b0f0', end_color='00b0f0', fill_type='solid')
+if output_type == 'Tabela':
+    spreadsheet = openpyxl.load_workbook('template.xlsx')
+    sheet = spreadsheet.active
+    sheet['A3'] = f'Data wykonania raportu: {datetime.now().strftime("%d.%m.%Y")}'
+    sheet['A5'] = 'Pismo'
+    sheet['A5'].fill = PatternFill(start_color='00b0f0', end_color='00b0f0', fill_type='solid')
 
-output_df = pd.read_html(filtered_df_html)[0]
+    output_df = pd.read_html(filtered_df_html)[0]
 
-for col_index, column in enumerate(list(output_df.columns)[1:], start=2):
-    cell = sheet.cell(row=5, column=col_index, value=column)
-    cell.fill = PatternFill(start_color='00b0f0', end_color='00b0f0', fill_type='solid')
+    for col_index, column in enumerate(list(output_df.columns)[1:], start=2):
+        cell = sheet.cell(row=5, column=col_index, value=column)
+        cell.fill = PatternFill(start_color='00b0f0', end_color='00b0f0', fill_type='solid')
 
-for row_index, row_data in enumerate(output_df.values, start=6):
-    for col_index, value in enumerate(row_data, start=1):
-        cell = sheet.cell(row=row_index, column=col_index, value=value)
-        cell.alignment = Alignment(horizontal='center')
-        if row_index % 2 == 0:
-            cell.fill = PatternFill(start_color='d9e1f2', end_color='d9e1f2', fill_type='solid')
+    for row_index, row_data in enumerate(output_df.values, start=6):
+        for col_index, value in enumerate(row_data, start=1):
+            cell = sheet.cell(row=row_index, column=col_index, value=value)
+            cell.alignment = Alignment(horizontal='center')
+            if row_index % 2 == 0:
+                cell.fill = PatternFill(start_color='d9e1f2', end_color='d9e1f2', fill_type='solid')
 
-sheet.cell(row=row_index+1, column=1, value=footer_message)
+    sheet.cell(row=row_index+1, column=1, value=footer_message)
 
-output_file = 'Raport_Social_Media.xlsx'
-spreadsheet.save(output_file)
+    output_file = 'Raport_Social_Media.xlsx'
+    spreadsheet.save(output_file)
 
-st.download_button(label="Pobierz powyższą tabelę",
-                    data=open(output_file, 'rb').read(),
-                      file_name=output_file,
-                        mime="application/vnd.ms-excel"
-                        )
+    st.download_button(label="Pobierz powyższą tabelę",
+                        data=open(output_file, 'rb').read(),
+                        file_name=output_file,
+                            mime="application/vnd.ms-excel"
+                            )
 
 
 gc.collect()
