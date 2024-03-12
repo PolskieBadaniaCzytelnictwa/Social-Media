@@ -328,8 +328,10 @@ if output_type == 'Tabela':
             cell.alignment = Alignment(horizontal='center')
             if row_index % 2 == 0:
                 cell.fill = PatternFill(start_color='d9e1f2', end_color='d9e1f2', fill_type='solid')
-
-    sheet.cell(row=row_index+1, column=1, value=footer_message)
+    try:
+        sheet.cell(row=row_index+1, column=1, value=footer_message)
+    except NameError:
+        pass
 
     output_file = 'Raport_Social_Media.xlsx'
     spreadsheet.save(output_file)
