@@ -420,7 +420,7 @@ else:
 
         st.pyplot(barplot(df=aux, column=column))
 
-footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 01.04.2025"
+footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.06.2025"
 st.markdown(
     f"""<div style="font-size:12px">{footer_message}</div>""", unsafe_allow_html=True
 )
