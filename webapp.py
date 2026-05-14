@@ -1,17 +1,16 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib
 import numpy as np
-import os
-from copy import deepcopy
-
-os.chdir(os.path.dirname(__file__))
 import gc
 import openpyxl
 from openpyxl.styles import PatternFill, Alignment
 from datetime import datetime
+from copy import deepcopy
+from io import BytesIO, StringIO
+import os
 
+os.chdir(os.path.dirname(__file__))
 
 st.set_page_config(page_title="Prasa w mediach społecznościowych", page_icon=":book:")
 st.markdown(
@@ -40,18 +39,17 @@ table_css_style = """
         }
 
         table.sticky-header {
-            font-size: 0.79em; /* Adjust the font size as needed */
-            max-width: 100%; /* Adjust the width as needed */
-            overflow-x: auto; /* Add horizontal scroll if needed */
+            font-size: 0.79em;
+            max-width: 100%;
+            overflow-x: auto;
         }
 
-        /* Add a new style for the first column */
         table.sticky-header td.col0 {
             text-align: center;
         }
 
         td {
-        white-space: nowrap; /* This prevents text from breaking into multiple lines */
+            white-space: nowrap;
         }
     </style>
 """
@@ -67,24 +65,20 @@ def load_data(filename, indexcol=False):
 
 
 def format_number_with_spaces(number_str):
-    # formatowanie liczb do formatu 1 111 111
     reversed_str = str(int(number_str))[::-1]
     groups = [reversed_str[i : i + 3] for i in range(0, len(reversed_str), 3)]
     return " ".join(groups)[::-1]
 
 
 ######## Ładowanie danych ########
-# dane dot. followersów
 df = load_data("./df_followers.xlsx", indexcol=True)
 
-# dane dot. periodyczności
 mapa = load_data("./mapa_typy_pism.xlsx")
 df = df.merge(mapa, on="Tytuł", how="left")
 df = df[df["Typ"] != "NIEUWZGLĘDNIONE"]
 df.set_index(df.columns[0], inplace=True)
-donutdf = deepcopy(df.drop(["Typ"], axis=1))  # ramka danych do donut charta
+donutdf = deepcopy(df.drop(["Typ"], axis=1))
 
-# dane dot. hyperlinków
 hyper_df = load_data("./mapa_adresy_pbc.xlsx")
 hyperlink_dict = {
     title: address for title, address in zip(hyper_df["Tytuł"], hyper_df["AdresPBC"])
@@ -100,15 +94,13 @@ def add_hyperlink(value, hyperlink_dict=hyperlink_dict):
 ######## Wykresy ########
 
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
+@st.cache_resource
 def barplot(df, column):
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.barh(df.index, df, color=my_colors[column], height=0.5)
     plt.gca().spines[:].set_visible(False)
     plt.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False)
-    plt.tick_params(
-        axis="y", which="both", length=0, labelleft=False
-    )  # labelleft=False żeby wykresy zaczynały się w tym samym miejscu
+    plt.tick_params(axis="y", which="both", length=0, labelleft=False)
     plt.gca().invert_yaxis()
 
     plt.title(
@@ -134,15 +126,17 @@ def barplot(df, column):
     return fig
 
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
-def barplot_suma(filtered_df):
+@st.cache_resource
+def barplot_suma(filtered_df, selected_columns):
+    # FIX: selected_columns passed as argument instead of using outer scope variable
     if len(selected_columns) == 1:
         st.write(
             "Proszę zaznaczyć co najmniej jedno medium, aby wyświetlić wykres z sumą."
         )
         st.stop()
-    top10 = filtered_df[selected_columns[:-1]]
-    top10 = top10.applymap(lambda x: int(x.replace(" ", "").replace("-", "0")))
+
+    top10 = filtered_df[selected_columns[:-1]].copy()
+    top10 = top10.map(lambda x: int(x.replace(" ", "").replace("-", "0")))
     top10["Suma_Selected"] = top10.sum(axis=1)
     top10 = top10.sort_values("Suma_Selected", ascending=False).head(10)
 
@@ -165,7 +159,7 @@ def barplot_suma(filtered_df):
         fontdict={"fontsize": 14, "fontweight": "bold", "fontname": "Lato"},
     )
     plt.gca().invert_yaxis()
-    if selected_typ != ["Dzienniki regionalne"]:
+    if selected_columns != ["Dzienniki regionalne"]:
         plt.legend(loc=(0.8, 0.15))
     else:
         plt.legend(loc=(1.05, 0.15))
@@ -196,7 +190,7 @@ def barplot_suma(filtered_df):
     return fig
 
 
-@st.cache_data(hash_funcs={matplotlib.figure.Figure: lambda _: None}, ttl=3600)
+@st.cache_resource
 def create_donut(donutdf):
     sumdict = {}
     media = ["Facebook", "X", "YouTube", "Instagram", "LinkedIn", "TikTok", "Pinterest"]
@@ -204,7 +198,6 @@ def create_donut(donutdf):
         sumdict[column] = donutdf[column].sum()
 
     followers = [sumdict[medium] for medium in media]
-    # rozwiązanie dla nachodzących na siebie podpisów (przy zmiane danych będzie wymagało korekty)
     label = [
         medium
         + ": "
@@ -212,8 +205,11 @@ def create_donut(donutdf):
         + "%"
         for medium in media[:4]
     ] + [""] * 3
+
+    fig, ax = plt.subplots()  # FIX: explicit fig/ax instead of relying on plt state
+
     for i, medium in enumerate(media[4:]):
-        plt.text(
+        ax.text(
             0.5 * i - 0.55,
             1.05 + (i % 2) / 11,
             medium
@@ -226,7 +222,7 @@ def create_donut(donutdf):
             fontdict={"fontsize": 8.8, "fontname": "Lato"},
         )
 
-    plt.pie(
+    ax.pie(
         followers,
         colors=[my_colors[medium] for medium in media],
         labels=label,
@@ -234,13 +230,12 @@ def create_donut(donutdf):
         startangle=90,
         counterclock=False,
         textprops={"fontsize": 8.8, "fontname": "Lato", "color": "#31333f"},
-    )  # , explode=tuple([0.1] *len(Media)))
+    )
 
     centre_circle = plt.Circle((0, 0), 0.70, fc="white")
-    fig = plt.gcf()
     fig.gca().add_artist(centre_circle)
 
-    plt.text(
+    ax.text(
         0,
         0.1,
         "Suma obserwatorów",
@@ -249,7 +244,7 @@ def create_donut(donutdf):
         color="#31333f",
         fontdict={"fontsize": 13, "fontname": "Lato", "fontweight": "bold"},
     )
-    plt.text(
+    ax.text(
         0,
         -0.1,
         str(round(sumdict["Suma"] / pow(10, 6), 1)).replace(".", ",") + " mln",
@@ -258,11 +253,8 @@ def create_donut(donutdf):
         color="#31333f",
         fontdict={"fontsize": 27, "fontname": "Lato", "fontweight": "bold"},
     )
-    plt.axis("equal")
+    ax.axis("equal")
     return fig
-
-
-######## Koniec wykresów ########
 
 
 ######## Wykres kołowy ########
@@ -272,8 +264,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.pyplot(create_donut(donutdf))
-###############################
-
 
 st.markdown("---")
 st.markdown(
@@ -283,10 +273,12 @@ st.markdown(
 
 typ = list(df["Typ"].unique())
 selected_typ = st.multiselect("Wybierz grupę pism:", options=typ, default=typ)
+
+# FIX: always use .copy() to avoid mutating the cached dataframe
 if selected_typ:
-    filtered_df = df[df["Typ"].isin(selected_typ)]
+    filtered_df = df[df["Typ"].isin(selected_typ)].copy()
 else:
-    filtered_df = df
+    filtered_df = df.copy()
 
 media = list(df.columns.drop(["Typ"]))
 st.markdown(
@@ -316,26 +308,24 @@ medialist = [
     (pinterest, "Pinterest"),
     (suma, "Suma"),
 ]
-selected_columns = [x[1] for x in medialist if x[0]]
-# Przypadek, gdy nic nie jest zaznaczone
+selected_columns = [item[1] for item in medialist if item[0]]
 if len(selected_columns) == 0:
-    selected_columns = [x[1] for x in medialist]
+    selected_columns = [item[1] for item in medialist]
 
-# Aktualizacja sumy w zależności do wybranych pism
 if "Suma" in selected_columns:
     if len(selected_columns) > 1:
         filtered_df["Suma"] = filtered_df[selected_columns[:-1]].sum(axis=1)
         filtered_df = filtered_df.sort_values("Suma", ascending=False)
     else:
-        filtered_df["Suma"] = df["Suma"]  # suma dla wszystkich pism
+        filtered_df["Suma"] = df["Suma"]
 
 filtered_df = filtered_df.replace(0, "-")
-filtered_df = filtered_df[selected_columns].applymap(
+
+# FIX: use .map() instead of deprecated .applymap()
+filtered_df = filtered_df[selected_columns].map(
     lambda x: format_number_with_spaces(x) if x != "-" else x
 )
 
-
-# Sortowanie według 1 medium, jeśli tylko 1 medium wybrane
 if len(selected_columns) == 1:
     filtered_df[selected_columns[0]] = (
         filtered_df[selected_columns[0]]
@@ -347,15 +337,17 @@ if len(selected_columns) == 1:
     filtered_df[selected_columns[0]] = (
         filtered_df[selected_columns[0]].replace(0, "-").astype(str)
     )
-    filtered_df = filtered_df.applymap(
+    filtered_df = filtered_df.map(
         lambda x: format_number_with_spaces(x) if x != "-" else x
     )
-
 
 ######## Wyświetlanie danych ########
 output_type = st.radio(
     "Wybierz tryb wyświetlania danych:", ["Tabela", "Wykresy"], horizontal=True
 )
+
+footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 14.04.2026"
+
 if output_type == "Tabela":
     searchbar = st.text_input("Wyszukaj markę prasową:", "", key="placeholder")
     filtered_df = filtered_df[
@@ -370,10 +362,7 @@ if output_type == "Tabela":
             {"selector": "table", "props": [("text-align", "center")]},
             {"selector": "th", "props": [("text-align", "center")]},
             {"selector": "td", "props": [("text-align", "center")]},
-            {
-                "selector": "th.col0, td.col0",
-                "props": [("text-align", "center")],
-            },  # Update the selector for the first column
+            {"selector": "th.col0, td.col0", "props": [("text-align", "center")]},
         ]
     )
 
@@ -395,14 +384,13 @@ else:
         st.stop()
 
     if "Suma" in selected_columns:
-        st.pyplot(barplot_suma(filtered_df))
+        st.pyplot(barplot_suma(filtered_df, selected_columns))
 
     for column in selected_columns:
         if column == "Suma":
             continue
 
         aux = filtered_df[filtered_df[column] != "-"][column]
-        # Zamiana wartości na całkowite
         aux = (
             aux.str.replace(" ", "")
             .replace("-", 0)
@@ -414,20 +402,18 @@ else:
         if len(aux) == 0:
             st.write(f"Brak danych dla kategorii {column}")
             continue
-        # przypadki gdzie jest mniej niż 10 pism w danej kategorii
+
         while len(aux) < 10:
             aux = pd.concat([aux, pd.Series({" " * len(aux): 0})], axis=0)
 
         st.pyplot(barplot(df=aux, column=column))
 
-footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 30.06.2025"
 st.markdown(
     f"""<div style="font-size:12px">{footer_message}</div>""", unsafe_allow_html=True
 )
 st.write("\n")
 
-
-# Pobieranie przefiltrowanych danych
+# FIX: generate xlsx in memory — no disk writes, no leftover files
 if output_type == "Tabela":
     spreadsheet = openpyxl.load_workbook("template.xlsx")
     sheet = spreadsheet.active
@@ -437,7 +423,7 @@ if output_type == "Tabela":
         start_color="00b0f0", end_color="00b0f0", fill_type="solid"
     )
 
-    output_df = pd.read_html(filtered_df_html)[0]
+    output_df = pd.read_html(StringIO(filtered_df_html))[0]
 
     for col_index, column in enumerate(list(output_df.columns)[1:], start=2):
         cell = sheet.cell(row=5, column=col_index, value=column)
@@ -453,20 +439,22 @@ if output_type == "Tabela":
                 cell.fill = PatternFill(
                     start_color="d9e1f2", end_color="d9e1f2", fill_type="solid"
                 )
+
     try:
         sheet.cell(row=row_index + 1, column=1, value=footer_message)
     except NameError:
         pass
 
-    output_file = "Raport_Social_Media.xlsx"
-    spreadsheet.save(output_file)
+    # FIX: save to BytesIO buffer instead of disk
+    output_buffer = BytesIO()
+    spreadsheet.save(output_buffer)
+    output_buffer.seek(0)
 
     st.download_button(
         label="Pobierz powyższą tabelę",
-        data=open(output_file, "rb").read(),
-        file_name=output_file,
+        data=output_buffer,
+        file_name="Raport_Social_Media.xlsx",
         mime="application/vnd.ms-excel",
     )
-
 
 gc.collect()
