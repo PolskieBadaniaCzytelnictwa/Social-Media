@@ -346,7 +346,7 @@ output_type = st.radio(
     "Wybierz tryb wyświetlania danych:", ["Tabela", "Wykresy"], horizontal=True
 )
 
-footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 14.04.2026"
+footer_message = "Źródło: Liczba obserwatorów w mediach społecznościowych, opracowanie własne PBC, dane na dzień 23.06.2026"
 
 if output_type == "Tabela":
     searchbar = st.text_input("Wyszukaj markę prasową:", "", key="placeholder")
